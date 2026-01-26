@@ -4,7 +4,7 @@ const upload = require('../middleware/upload');
 const { cloudinary } = require('../config/cloudinary');
 const { protect, admin } = require('../middleware/auth');
 
-// @desc    Upload product image
+// @desc    Upload product image (single)
 // @route   POST /api/upload/product
 // @access  Private/Admin
 router.post('/product', protect, admin, upload.single('image'), (req, res) => {
@@ -27,6 +27,41 @@ router.post('/product', protect, admin, upload.single('image'), (req, res) => {
                 publicId: req.file.filename, // Cloudinary public ID
                 size: req.file.size
             }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+// @desc    Upload multiple product images
+// @route   POST /api/upload/products
+// @access  Private/Admin
+router.post('/products', protect, admin, upload.array('images', 10), (req, res) => {
+    try {
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No files uploaded'
+            });
+        }
+
+        // Process all uploaded files
+        const uploadedImages = req.files.map(file => ({
+            filename: file.filename,
+            path: file.path, // Cloudinary URL
+            url: file.path,  // Same as path, for compatibility
+            publicId: file.filename, // Cloudinary public ID
+            size: file.size
+        }));
+
+        res.status(200).json({
+            success: true,
+            message: `${req.files.length} image(s) uploaded successfully`,
+            data: uploadedImages,
+            count: req.files.length
         });
     } catch (error) {
         res.status(500).json({
