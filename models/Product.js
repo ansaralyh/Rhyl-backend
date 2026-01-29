@@ -15,6 +15,12 @@ const productSchema = new mongoose.Schema({
         required: [true, 'Please provide a price'],
         min: 0
     },
+    discount: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100
+    },
     category: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Category',
