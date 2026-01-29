@@ -25,7 +25,8 @@ const allowedOrigins = [
     'http://localhost:5000',
     'https://www.rhylsuperstore.co.uk',
     'https://rhylsuperstore.co.uk',
-    'https://rhyl-store-jzly-git-staging-branch-ansaralyhs-projects.vercel.app'
+    'https://rhyl-store-jzly-git-staging-branch-ansaralyhs-projects.vercel.app',
+    'https://rhyl-store-ansaralyhs-projects.vercel.app'
 ];
 
 app.use(cors({
@@ -41,11 +42,12 @@ app.use(cors({
             }
         }
         
-        if (allowedOrigins.indexOf(origin) === -1) {
-            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-            return callback(new Error(msg), false);
+        // Allow exact list or any Vercel frontend preview URL
+        if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
+            return callback(null, true);
         }
-        return callback(null, true);
+        const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+        return callback(new Error(msg), false);
     },
     credentials: true
 }));
