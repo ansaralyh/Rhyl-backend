@@ -42,10 +42,14 @@ app.use(cors({
             }
         }
         
-        // Allow exact list or any Vercel frontend preview URL
-        if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
+        // Allow exact list or any Vercel frontend preview URL (more permissive check)
+        if (allowedOrigins.indexOf(origin) !== -1 || 
+            origin.includes('.vercel.app') || 
+            origin.includes('rhyl')) {
             return callback(null, true);
         }
+        
+        console.log('BLOCKED ORIGIN:', origin); // Log blocked origins for debugging
         const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
         return callback(new Error(msg), false);
     },
