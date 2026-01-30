@@ -19,42 +19,20 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Enable CORS
-const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://localhost:5000',
-    'https://www.rhylsuperstore.co.uk',
-    'https://rhylsuperstore.co.uk',
-    'https://rhyl-store-jzly-git-staging-branch-ansaralyhs-projects.vercel.app',
-    'https://rhyl-store-ansaralyhs-projects.vercel.app'
-];
-
-app.use(cors({
-    origin: function(origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        
-        // Allow all localhost and 127.0.0.1 origins for development
-        if (process.env.NODE_ENV === 'development') {
-            const isLocalhost = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
-            if (isLocalhost) {
-                return callback(null, true);
-            }
-        }
-        
-        // Allow exact list or any Vercel frontend preview URL (more permissive check)
-        if (allowedOrigins.indexOf(origin) !== -1 || 
-            origin.includes('.vercel.app') || 
-            origin.includes('rhyl')) {
-            return callback(null, true);
-        }
-        
-        console.log('BLOCKED ORIGIN:', origin); // Log blocked origins for debugging
-        const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-        return callback(new Error(msg), false);
+// Enable CORS with broad permissive strategy for debugging live issue
+const corsOptions = {
+    origin: (origin, callback) => {
+        // Log the origin for debugging purposes
+        if (origin) console.log('CORS Origin:', origin);
+        // Allow all origins to fix the live usage blocking
+        callback(null, true); 
     },
-    credentials: true
-}));
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Handle preflight requests
 
 // Security headers
 app.use(helmet());
