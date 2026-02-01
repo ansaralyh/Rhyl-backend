@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
@@ -19,6 +20,10 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 }));
+
+// ✅ Serve Frontend Static Files
+app.use('/Rhyl-frontend', express.static(path.join(__dirname, '../Rhyl-frontend')));
+app.use(express.static(path.join(__dirname, '../Rhyl-frontend')));
 
 // Rate limiting
 app.use('/api/', rateLimit({
@@ -57,3 +62,11 @@ app.use((err, req, res, next) => {
 
 // ✅ THIS is what Vercel needs
 module.exports = app;
+
+// ✅ For Local Development
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
