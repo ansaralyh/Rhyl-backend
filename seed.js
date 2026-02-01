@@ -28,10 +28,8 @@ const categories = [
     { name: 'Household', icon: 'home', color: 'slate', description: 'Cleaning and household items' },
     { name: 'Personal Care', icon: 'smile', color: 'purple', description: 'Personal care products' },
     { name: 'Baby Care', icon: 'baby', color: 'pink', description: 'Baby products and care' },
-    { name: 'Pakistani Product', icon: 'flag', color: 'green', description: 'Pakistani specialty items' },
-    { name: 'Indian Product', icon: 'flag', color: 'orange', description: 'Indian specialty items' },
-    { name: 'African Product', icon: 'flag', color: 'yellow', description: 'African specialty items' },
-    { name: 'Filipino Product', icon: 'flag', color: 'blue', description: 'Filipino specialty items' }
+    { name: 'Asian Products', icon: 'flag', color: 'teal', description: 'Asian specialty items' },
+    { name: 'African Product', icon: 'flag', color: 'yellow', description: 'African specialty items' }
 ];
 
 const seedData = async () => {
