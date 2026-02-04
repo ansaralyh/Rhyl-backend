@@ -21,11 +21,11 @@ const productSchema = new mongoose.Schema({
         min: 0,
         max: 100
     },
-    category: {
+    category: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Category',
         required: true
-    },
+    }],
     image: {
         type: String,
         default: 'images/placeholder.jpg'
