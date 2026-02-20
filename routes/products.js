@@ -5,7 +5,8 @@ const {
     getProduct,
     createProduct,
     updateProduct,
-    deleteProduct
+    deleteProduct,
+    bulkCreateProducts
 } = require('../controllers/productController');
 const { protect } = require('../middleware/auth');
 const { admin } = require('../middleware/admin');
@@ -13,6 +14,8 @@ const { admin } = require('../middleware/admin');
 router.route('/')
     .get(getProducts)
     .post(protect, admin, createProduct);
+
+router.post('/bulk', protect, admin, bulkCreateProducts);
 
 router.route('/:id')
     .get(getProduct)
