@@ -15,6 +15,16 @@ const productSchema = new mongoose.Schema({
         required: [true, 'Please provide a price'],
         min: 0
     },
+    previousPrice: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+    currentPrice: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
     discount: {
         type: Number,
         default: 0,
