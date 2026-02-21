@@ -28,7 +28,14 @@ exports.signup = async (req, res) => {
         // Generate token
         const token = generateToken(user._id);
 
-        res.status(201).json({
+        const cookieOptions = {
+            expires: new Date(Date.now() + parseInt(process.env.JWT_COOKIE_EXPIRE || 30) * 24 * 60 * 60 * 1000),
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Strict'
+        };
+
+        res.status(201).cookie('token', token, cookieOptions).json({
             success: true,
             data: {
                 _id: user._id,
@@ -84,14 +91,21 @@ exports.login = async (req, res) => {
         // Generate token
         const token = generateToken(user._id);
 
-        res.status(200).json({
+        const cookieOptions = {
+            expires: new Date(Date.now() + parseInt(process.env.JWT_COOKIE_EXPIRE || 30) * 24 * 60 * 60 * 1000),
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Strict'
+        };
+
+        res.status(200).cookie('token', token, cookieOptions).json({
             success: true,
             data: {
                 _id: user._id,
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                token
+                token // Optional: keep for legacy frontend if needed, but backend will use cookie
             }
         });
     } catch (error) {
@@ -141,6 +155,30 @@ exports.updateProfile = async (req, res) => {
         res.status(200).json({
             success: true,
             data: user
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+// @desc    Logout user / clear cookie
+// @route   GET /api/auth/logout
+// @access  Public
+exports.logout = async (req, res) => {
+    try {
+        res.cookie('token', 'none', {
+            expires: new Date(Date.now() + 10 * 1000),
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Strict'
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'User logged out successfully'
         });
     } catch (error) {
         res.status(500).json({

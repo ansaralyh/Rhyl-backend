@@ -29,7 +29,7 @@ const orderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
+        enum: ['pending', 'confirmed', 'delivered', 'cancelled'],
         default: 'pending'
     },
     shippingAddress: {
@@ -38,6 +38,13 @@ const orderSchema = new mongoose.Schema({
         postcode: String,
         country: String
     },
+    customerName: {
+        type: String,
+        required: true
+    },
+    customerEmail: String,
+    customerPhone: String,
+
     paymentMethod: {
         type: String,
         default: 'cash'
