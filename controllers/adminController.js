@@ -9,7 +9,12 @@ const User = require('../models/User');
 exports.getDashboardStats = async (req, res) => {
     try {
         // Total sales
-        const orders = await Order.find({ paymentStatus: 'paid' });
+        const orders = await Order.find({
+            $or: [
+                { paymentStatus: 'paid' },
+                { status: 'delivered' }
+            ]
+        });
         const totalSales = orders.reduce((sum, order) => sum + order.totalAmount, 0);
 
         // Total orders

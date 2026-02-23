@@ -209,9 +209,22 @@ exports.updateProduct = async (req, res) => {
         const currNum = parseFloat(body.currentPrice);
         const priceNum = parseFloat(body.price);
         if (!isNaN(prevNum) || !isNaN(currNum) || !isNaN(priceNum)) {
-            body.previousPrice = !isNaN(prevNum) ? Math.max(0, prevNum) : (body.previousPrice != null ? body.previousPrice : 0);
-            body.currentPrice = !isNaN(currNum) ? Math.max(0, currNum) : (body.currentPrice != null ? body.currentPrice : (body.previousPrice || priceNum || 0));
-            body.price = body.currentPrice || (!isNaN(priceNum) ? Math.max(0, priceNum) : body.price);
+            const existingProduct = await Product.findById(req.params.id);
+            if (existingProduct) {
+                const newCurrentPrice = !isNaN(currNum) ? Math.max(0, currNum) : (!isNaN(priceNum) ? Math.max(0, priceNum) : existingProduct.currentPrice);
+
+                if (newCurrentPrice !== existingProduct.currentPrice) {
+                    // Shift old currentPrice to previousPrice
+                    body.previousPrice = existingProduct.currentPrice;
+                    body.currentPrice = newCurrentPrice;
+                    body.price = newCurrentPrice; // Keep legacy field in sync
+                } else {
+                    // Manual update of previousPrice or no change
+                    body.previousPrice = !isNaN(prevNum) ? Math.max(0, prevNum) : existingProduct.previousPrice;
+                    body.currentPrice = existingProduct.currentPrice;
+                    body.price = existingProduct.price;
+                }
+            }
         }
         const product = await Product.findByIdAndUpdate(req.params.id, body, {
             new: true,
