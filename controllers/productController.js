@@ -51,7 +51,13 @@ exports.getProducts = async (req, res) => {
             total: count,
             page: parseInt(page),
             pages: Math.ceil(count / limit),
-            data: products
+            data: products,
+
+            // Pagination metadata for Admin Panel
+            products: products,
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(count / limit),
+            totalProducts: count
         });
     } catch (error) {
         res.status(500).json({
