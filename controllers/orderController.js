@@ -7,13 +7,26 @@ const { sendEmail, getOrderStatusEmailContent } = require('../utils/email');
 // @access  Private
 exports.getOrders = async (req, res) => {
     try {
-        const orders = await Order.find({ user: req.user._id })
+        const { status, paymentStatus, page = 1, limit = 20 } = req.query;
+        let query = { user: req.user._id };
+
+        if (status) query.status = status;
+        if (paymentStatus) query.paymentStatus = paymentStatus;
+
+        const orders = await Order.find(query)
             .populate('items.product')
-            .sort('-createdAt');
+            .sort('-createdAt')
+            .limit(limit * 1)
+            .skip((page - 1) * limit);
+
+        const total = await Order.countDocuments(query);
 
         res.status(200).json({
             success: true,
             count: orders.length,
+            total,
+            page: parseInt(page),
+            pages: Math.ceil(total / limit),
             data: orders
         });
     } catch (error) {
@@ -177,14 +190,40 @@ exports.updateOrderStatus = async (req, res) => {
 // @access  Private/Admin
 exports.getAllOrders = async (req, res) => {
     try {
-        const orders = await Order.find()
+        const { status, paymentStatus, search, startDate, endDate, page = 1, limit = 20 } = req.query;
+        let query = {};
+
+        if (status) query.status = status;
+        if (paymentStatus) query.paymentStatus = paymentStatus;
+        if (search) {
+            query.$or = [
+                { customerName: { $regex: search, $options: 'i' } },
+                { customerEmail: { $regex: search, $options: 'i' } },
+                { 'shippingAddress.city': { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        if (startDate || endDate) {
+            query.createdAt = {};
+            if (startDate) query.createdAt.$gte = new Date(startDate);
+            if (endDate) query.createdAt.$lte = new Date(endDate);
+        }
+
+        const orders = await Order.find(query)
             .populate('user', 'name email')
             .populate('items.product')
-            .sort('-createdAt');
+            .sort('-createdAt')
+            .limit(limit * 1)
+            .skip((page - 1) * limit);
+
+        const total = await Order.countDocuments(query);
 
         res.status(200).json({
             success: true,
             count: orders.length,
+            total,
+            page: parseInt(page),
+            pages: Math.ceil(total / limit),
             data: orders
         });
     } catch (error) {

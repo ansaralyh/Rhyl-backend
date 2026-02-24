@@ -5,8 +5,28 @@ const Category = require('../models/Category');
 // @access  Public
 exports.getCategories = async (req, res) => {
     try {
-        const categories = await Category.find().sort({ priority: 1, createdAt: -1 });
-        res.status(200).json({ success: true, count: categories.length, data: categories });
+        const { search, page = 1, limit = 20 } = req.query;
+        let query = {};
+
+        if (search) {
+            query.name = { $regex: search, $options: 'i' };
+        }
+
+        const categories = await Category.find(query)
+            .sort({ priority: 1, createdAt: -1 })
+            .limit(limit * 1)
+            .skip((page - 1) * limit);
+
+        const total = await Category.countDocuments(query);
+
+        res.status(200).json({
+            success: true,
+            count: categories.length,
+            total,
+            page: parseInt(page),
+            pages: Math.ceil(total / limit),
+            data: categories
+        });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
