@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const Category = require('../models/Category');
 
@@ -6,7 +7,7 @@ const Category = require('../models/Category');
 // @access  Public
 exports.getProducts = async (req, res) => {
     try {
-        const { category, search, featured, page = 1, limit = 20, sort = '-createdAt' } = req.query;
+        const { category, search, featured, inStock, minPrice, maxPrice, page = 1, limit = 20, sort = '-createdAt' } = req.query;
 
         // Build query
         let query = {};
@@ -21,6 +22,18 @@ exports.getProducts = async (req, res) => {
 
         if (search) {
             query.$text = { $search: search };
+        }
+
+        if (inStock === 'true') {
+            query.stock = { $gt: 0 };
+        } else if (inStock === 'false') {
+            query.stock = 0;
+        }
+
+        if (minPrice || maxPrice) {
+            query.price = {};
+            if (minPrice) query.price.$gte = Number(minPrice);
+            if (maxPrice) query.price.$lte = Number(maxPrice);
         }
 
         // Execute query with pagination
@@ -97,6 +110,9 @@ exports.bulkCreateProducts = async (req, res) => {
         const created = [];
         const errors = [];
 
+        // 1. Validate all rows and prepare robust insert data
+        const validProducts = [];
+
         for (let i = 0; i < rawProducts.length; i++) {
             const row = rawProducts[i];
             const rowNum = i + 1;
@@ -137,6 +153,7 @@ exports.bulkCreateProducts = async (req, res) => {
                 const featured = /^(1|true|yes)$/i.test(String(featuredVal).trim());
 
                 const productData = {
+                    _id: new mongoose.Types.ObjectId(),
                     name,
                     description: (row.description || row.productDescription || row['Product Description'] || '').toString().trim(),
                     price: currentPrice || previousPrice,
@@ -150,10 +167,45 @@ exports.bulkCreateProducts = async (req, res) => {
                     featured
                 };
 
-                const product = await Product.create(productData);
-                created.push({ row: rowNum, id: product._id, name: product.name });
+                validProducts.push({ rowNum, productData });
             } catch (err) {
-                errors.push({ row: rowNum, message: err.message || 'Failed to create product' });
+                errors.push({ row: rowNum, message: err.message || 'Failed to parse product data' });
+            }
+        }
+
+        // 2. Perform chunked inserts
+        const BATCH_SIZE = 100;
+        for (let i = 0; i < validProducts.length; i += BATCH_SIZE) {
+            const batch = validProducts.slice(i, i + BATCH_SIZE);
+            const docsToInsert = batch.map(b => b.productData);
+
+            try {
+                const insertedDocs = await Product.insertMany(docsToInsert, { ordered: false });
+                insertedDocs.forEach((doc) => {
+                    const original = batch.find(b => b.productData._id.toString() === doc._id.toString());
+                    const rowNum = original ? original.rowNum : 'unknown';
+                    created.push({ row: rowNum, id: doc._id, name: doc.name });
+                });
+            } catch (err) {
+                if (err.insertedDocs && Array.isArray(err.insertedDocs)) {
+                    err.insertedDocs.forEach(doc => {
+                        const original = batch.find(b => b.productData._id.toString() === doc._id.toString());
+                        const rowNum = original ? original.rowNum : 'unknown';
+                        created.push({ row: rowNum, id: doc._id, name: doc.name });
+                    });
+                }
+
+                if (err.writeErrors && Array.isArray(err.writeErrors)) {
+                    err.writeErrors.forEach(writeError => {
+                        const original = batch[writeError.index];
+                        const rowNum = original ? original.rowNum : 'unknown';
+                        errors.push({ row: rowNum, message: writeError.errmsg || writeError.message || 'Failed to insert product' });
+                    });
+                } else if (!err.insertedDocs) {
+                    batch.forEach(b => {
+                        errors.push({ row: b.rowNum, message: err.message || 'Failed to insert batch' });
+                    });
+                }
             }
         }
 
